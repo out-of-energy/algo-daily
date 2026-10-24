@@ -1,0 +1,713 @@
+{
+  "version": 1,
+  "rotation_anchor": "2026-10-24",
+  "categories": [
+    {
+      "id": "array-string-hash",
+      "order": 1,
+      "label": "数组 · 字符串 · 哈希",
+      "short": "数组/哈希",
+      "accent": "#f97316",
+      "blurb": "先把「数据长什么样」看透：下标、频次、前缀状态。",
+      "tags": [
+        "array",
+        "string",
+        "hash-table",
+        "prefix-sum",
+        "counting"
+      ],
+      "patterns": [
+        "前缀和",
+        "差分数组",
+        "哈希计数",
+        "原地标记"
+      ],
+      "must": [
+        1,
+        49,
+        128,
+        238,
+        242,
+        347,
+        560,
+        41,
+        54,
+        48,
+        73,
+        271,
+        380
+      ],
+      "tag_weights": {
+        "array": 1.0,
+        "string": 1.0,
+        "hash-table": 1.2,
+        "prefix-sum": 2.0,
+        "counting": 1.2
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "two-pointers-sliding-window",
+      "order": 2,
+      "label": "双指针 · 滑动窗口",
+      "short": "双指针",
+      "accent": "#0ea5e9",
+      "blurb": "用两个下标维护一个「合法区间」，关键在于单调性。",
+      "tags": [
+        "two-pointers",
+        "sliding-window"
+      ],
+      "patterns": [
+        "对撞指针",
+        "快慢指针",
+        "可变窗口",
+        "定长窗口"
+      ],
+      "must": [
+        11,
+        15,
+        16,
+        26,
+        27,
+        42,
+        75,
+        125,
+        167,
+        209,
+        283,
+        3,
+        76,
+        424,
+        567,
+        239
+      ],
+      "tag_weights": {
+        "two-pointers": 4.0,
+        "sliding-window": 4.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "binary-search",
+      "order": 3,
+      "label": "二分查找",
+      "short": "二分",
+      "accent": "#8b5cf6",
+      "blurb": "不是「有序数组里找数」，而是「答案具有单调性，可以砍掉一半」。",
+      "tags": [
+        "binary-search"
+      ],
+      "patterns": [
+        "lower_bound",
+        "旋转数组",
+        "二分答案",
+        "峰值/边界"
+      ],
+      "must": [
+        4,
+        33,
+        34,
+        35,
+        69,
+        74,
+        81,
+        153,
+        162,
+        278,
+        300,
+        704,
+        875,
+        1011,
+        410
+      ],
+      "tag_weights": {
+        "binary-search": 4.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "stack-queue-monotonic",
+      "order": 4,
+      "label": "栈 · 队列 · 单调栈",
+      "short": "栈/队列",
+      "accent": "#14b8a6",
+      "blurb": "后进先出处理嵌套，先进先出处理层级，单调栈处理「下一个更大」。",
+      "tags": [
+        "stack",
+        "queue",
+        "monotonic-stack"
+      ],
+      "patterns": [
+        "括号匹配",
+        "表达式求值",
+        "单调栈",
+        "双端队列"
+      ],
+      "must": [
+        20,
+        32,
+        71,
+        84,
+        85,
+        150,
+        155,
+        225,
+        232,
+        394,
+        496,
+        503,
+        739,
+        227,
+        239
+      ],
+      "tag_weights": {
+        "stack": 4.0,
+        "queue": 4.0,
+        "monotonic-stack": 4.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "linked-list",
+      "order": 5,
+      "label": "链表",
+      "short": "链表",
+      "accent": "#ec4899",
+      "blurb": "链表题的第一步永远是画箭头，第二步是保存 next。",
+      "tags": [
+        "linked-list"
+      ],
+      "patterns": [
+        "虚拟头结点",
+        "快慢指针",
+        "原地反转",
+        "归并"
+      ],
+      "must": [
+        2,
+        19,
+        21,
+        23,
+        24,
+        25,
+        61,
+        82,
+        83,
+        86,
+        92,
+        138,
+        141,
+        142,
+        146,
+        160,
+        206,
+        234
+      ],
+      "tag_weights": {
+        "linked-list": 4.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "tree-bst",
+      "order": 6,
+      "label": "二叉树 · BST",
+      "short": "二叉树",
+      "accent": "#22c55e",
+      "blurb": "先问自己：当前节点要做什么？答案从哪里来？子树要返回什么？",
+      "tags": [
+        "tree",
+        "binary-tree",
+        "binary-search-tree"
+      ],
+      "patterns": [
+        "遍历序",
+        "递归返回值",
+        "BST 中序",
+        "最近公共祖先"
+      ],
+      "must": [
+        94,
+        98,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        108,
+        110,
+        112,
+        124,
+        199,
+        226,
+        230,
+        236,
+        297,
+        543,
+        572,
+        700
+      ],
+      "tag_weights": {
+        "tree": 4.0,
+        "binary-tree": 4.0,
+        "binary-search-tree": 4.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "graph",
+      "order": 7,
+      "label": "图：BFS · DFS · 拓扑 · 并查集 · 最短路",
+      "short": "图",
+      "accent": "#6366f1",
+      "blurb": "先把题翻译成点和边，再决定是遍历、合并，还是求最短路。",
+      "tags": [
+        "graph",
+        "union-find",
+        "topological-sort",
+        "shortest-path",
+        "minimum-spanning-tree",
+        "depth-first-search",
+        "breadth-first-search"
+      ],
+      "patterns": [
+        "网格 DFS/BFS",
+        "拓扑排序",
+        "并查集",
+        "Dijkstra / Bellman-Ford"
+      ],
+      "must": [
+        133,
+        200,
+        207,
+        210,
+        310,
+        399,
+        417,
+        547,
+        684,
+        695,
+        743,
+        787,
+        797,
+        994,
+        1192,
+        1584,
+        1631,
+        1971
+      ],
+      "tag_weights": {
+        "graph": 4.0,
+        "union-find": 4.0,
+        "topological-sort": 4.0,
+        "shortest-path": 4.0,
+        "minimum-spanning-tree": 4.0,
+        "depth-first-search": 2.0,
+        "breadth-first-search": 2.0
+      },
+      "exclude_tags": [
+        "tree",
+        "binary-tree",
+        "binary-search-tree"
+      ],
+      "exclude_unless_tags": [
+        "graph",
+        "union-find",
+        "topological-sort",
+        "shortest-path",
+        "minimum-spanning-tree"
+      ]
+    },
+    {
+      "id": "heap",
+      "order": 8,
+      "label": "堆 / 优先队列",
+      "short": "堆",
+      "accent": "#eab308",
+      "blurb": "只关心当前最大/最小的那一小撮时，堆比全排序更划算。",
+      "tags": [
+        "heap-priority-queue"
+      ],
+      "patterns": [
+        "Top K",
+        "双堆中位数",
+        "多路归并",
+        "延迟删除"
+      ],
+      "must": [
+        23,
+        215,
+        295,
+        347,
+        373,
+        378,
+        621,
+        692,
+        703,
+        973,
+        1046,
+        1642,
+        1834
+      ],
+      "tag_weights": {
+        "heap-priority-queue": 4.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "backtracking",
+      "order": 9,
+      "label": "回溯",
+      "short": "回溯",
+      "accent": "#f43f5e",
+      "blurb": "回溯不是暴力枚举，而是「做选择 → 递归 → 撤销选择」的一棵决策树。",
+      "tags": [
+        "backtracking"
+      ],
+      "patterns": [
+        "子集",
+        "组合",
+        "排列",
+        "网格搜索",
+        "剪枝"
+      ],
+      "must": [
+        17,
+        22,
+        37,
+        39,
+        40,
+        46,
+        47,
+        51,
+        52,
+        77,
+        78,
+        79,
+        90,
+        93,
+        131,
+        216,
+        473
+      ],
+      "tag_weights": {
+        "backtracking": 4.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "dynamic-programming",
+      "order": 10,
+      "label": "动态规划",
+      "short": "DP",
+      "accent": "#06b6d4",
+      "blurb": "找到「状态」和「最后一次选择」，剩下的交给转移方程。",
+      "tags": [
+        "dynamic-programming",
+        "memoization"
+      ],
+      "patterns": [
+        "线性 DP",
+        "区间 DP",
+        "背包",
+        "状态机",
+        "树形 DP"
+      ],
+      "must": [
+        5,
+        10,
+        32,
+        53,
+        62,
+        63,
+        64,
+        70,
+        72,
+        91,
+        97,
+        115,
+        121,
+        139,
+        152,
+        198,
+        213,
+        221,
+        300,
+        309,
+        322,
+        337,
+        416,
+        494,
+        518,
+        1143
+      ],
+      "tag_weights": {
+        "dynamic-programming": 4.0,
+        "memoization": 3.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "greedy",
+      "order": 11,
+      "label": "贪心",
+      "short": "贪心",
+      "accent": "#84cc16",
+      "blurb": "贪心的难点不是写，而是证明「局部最优不会毁掉全局最优」。",
+      "tags": [
+        "greedy"
+      ],
+      "patterns": [
+        "区间调度",
+        "跳跃范围",
+        "股票交易",
+        "构造/交换论证"
+      ],
+      "must": [
+        45,
+        55,
+        56,
+        57,
+        122,
+        134,
+        135,
+        253,
+        435,
+        452,
+        455,
+        605,
+        621,
+        763,
+        860,
+        1029
+      ],
+      "tag_weights": {
+        "greedy": 4.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "sorting",
+      "order": 12,
+      "label": "排序",
+      "short": "排序",
+      "accent": "#a855f7",
+      "blurb": "排序既可以是答案，也可以是让后续算法变简单的预处理。",
+      "tags": [
+        "sorting",
+        "merge-sort",
+        "quickselect",
+        "bucket-sort",
+        "radix-sort",
+        "counting-sort"
+      ],
+      "patterns": [
+        "归并排序",
+        "快速选择",
+        "自定义比较器",
+        "桶/计数排序"
+      ],
+      "must": [
+        56,
+        75,
+        88,
+        147,
+        148,
+        179,
+        215,
+        274,
+        349,
+        912,
+        973,
+        1051,
+        1366,
+        1636,
+        1833
+      ],
+      "tag_weights": {
+        "sorting": 4.0,
+        "merge-sort": 3.0,
+        "quickselect": 3.0,
+        "bucket-sort": 2.0,
+        "radix-sort": 2.0,
+        "counting-sort": 2.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "bit-manipulation",
+      "order": 13,
+      "label": "位运算",
+      "short": "位运算",
+      "accent": "#64748b",
+      "blurb": "把整数看成 32 个独立开关：异或消对、与取位、移位枚举。",
+      "tags": [
+        "bit-manipulation"
+      ],
+      "patterns": [
+        "异或性质",
+        "lowbit",
+        "位掩码",
+        "二进制枚举"
+      ],
+      "must": [
+        136,
+        137,
+        190,
+        191,
+        231,
+        260,
+        268,
+        287,
+        318,
+        338,
+        371,
+        389,
+        421,
+        461,
+        476
+      ],
+      "tag_weights": {
+        "bit-manipulation": 4.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "math",
+      "order": 14,
+      "label": "基础数学",
+      "short": "数学",
+      "accent": "#d946ef",
+      "blurb": "先做数学上的等价变形，再写代码；小心溢出和负数取模。",
+      "tags": [
+        "math",
+        "number-theory",
+        "geometry",
+        "combinatorics",
+        "probability-and-statistics"
+      ],
+      "patterns": [
+        "进位/取模",
+        "最大公约数",
+        "快速幂",
+        "随机化",
+        "数位"
+      ],
+      "must": [
+        7,
+        9,
+        13,
+        29,
+        43,
+        50,
+        66,
+        69,
+        89,
+        118,
+        149,
+        166,
+        172,
+        202,
+        204,
+        224,
+        326,
+        365,
+        372,
+        470,
+        528
+      ],
+      "tag_weights": {
+        "math": 3.0,
+        "number-theory": 4.0,
+        "geometry": 3.0,
+        "combinatorics": 3.0,
+        "probability-and-statistics": 3.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    },
+    {
+      "id": "design",
+      "order": 15,
+      "label": "设计类",
+      "short": "设计",
+      "accent": "#0f766e",
+      "blurb": "设计题考的是接口背后的数据结构组合，以及每个操作的时间预算。",
+      "tags": [
+        "design",
+        "data-stream",
+        "iterator",
+        "trie",
+        "hash-function"
+      ],
+      "patterns": [
+        "哈希 + 双向链表",
+        "Trie",
+        "快照/版本",
+        "流式数据"
+      ],
+      "must": [
+        146,
+        155,
+        173,
+        208,
+        211,
+        225,
+        232,
+        284,
+        295,
+        297,
+        341,
+        355,
+        380,
+        432,
+        460,
+        705,
+        706,
+        707,
+        729,
+        1146,
+        1429,
+        2013
+      ],
+      "tag_weights": {
+        "design": 5.0,
+        "data-stream": 2.0,
+        "iterator": 1.5,
+        "trie": 1.5,
+        "hash-function": 1.0
+      },
+      "exclude_tags": [],
+      "exclude_unless_tags": []
+    }
+  ],
+  "classification": {
+    "method": "rules-v1",
+    "broad_tags": [
+      "array",
+      "string",
+      "hash-table"
+    ],
+    "out_of_scope_tags": [
+      "database",
+      "shell",
+      "concurrency"
+    ],
+    "must_bonus": 2.0,
+    "min_topic_score": 1.0,
+    "note": "A problem can belong to multiple topics. primary_topic is the strongest evidence, not the only topic."
+  }
+}

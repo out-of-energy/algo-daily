@@ -1,0 +1,22 @@
+.DS_Store
+__pycache__/
+*.pyc
+.cache/
+work/
+raw/
+.env
+data/daily/*.json
+data/daily/outbox/
+data/daily/logs/
+site/
+*.building.db
+.env.*
+!.env.example
+*.eml
+*.pem
+*.key
+# Question bank is built locally: `make data`
+data/algorithms.db
+data/normalized/
+# Personal notes, kept locally only
+docs/LOVE_MAIL_REFERENCE.md

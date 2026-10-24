@@ -1,0 +1,33 @@
+{
+  "app_name": "算法日报",
+  "timezone": "Asia/Shanghai",
+  "schedule_time": "08:00",
+  "public_base_url": "",
+  "selection": {
+    "strategy": "balanced-random",
+    "repeat_window_days": 180,
+    "prefer_curated": true,
+    "coverage_window_days": 30,
+    "difficulty_mix": {"window_days": 7, "Easy": 2, "Medium": 4, "Hard": 1}  },
+  "ai": {
+    "base_url": "https://api.deepseek.com/v1",
+    "model": "deepseek-v4-flash",
+    "temperature": 0.35,
+    "max_tokens": 10000,
+    "timeout_seconds": 180,
+    "disable_thinking": true
+  },
+  "data": {
+    "auto_bootstrap": true
+  },
+  "verify": {
+    "enabled": true,
+    "timeout_seconds": 10,
+    "case_timeout_seconds": 2,
+    "reroll_limit": 2
+  },
+  "email": {
+    "subject_prefix": "算法日报",
+    "attach_html": true
+  }
+}

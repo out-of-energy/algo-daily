@@ -1,0 +1,421 @@
+{
+  "hook": "窗口里每个字符只能出现一次。",
+  "real_meaning": {
+    "plain": "给一个字符串 s，找一段连续的子串，要求这段里没有重复字符，返回所有合法子串中最长的长度。注意是连续子串，不是随便挑几个字符组成的子序列。",
+    "analogy": "像一列火车，每节车厢写着字符。同一节车厢编号不能在一段连续车厢里出现两次；遇到重复，就从左边一节一节卸车厢，直到重复消失。题目问的是你能保留的最长一段。",
+    "input_output": "输入：字符串 s。输出：一个整数，表示最长无重复字符连续子串的长度；不是返回子串本身，也不是返回子串数量。",
+    "test": "设计一个可变窗口，并用「字符上一次出现的位置」判断什么时候需要收缩左边界。真正考的是窗口状态的定义，而不是背一个模板。",
+    "traps": [
+      "把 substring（连续）误当成 subsequence（可以不连续）。",
+      "字符上次出现的位置在当前窗口外时，仍然移动左指针，导致窗口无故变短。",
+      "空字符串时直接返回 1，或者循环初始化把答案写成 0 以外。"
+    ]
+  },
+  "approach": {
+    "name": "滑动窗口 + 最后位置表",
+    "one_line": "右指针不断扩张窗口；遇到窗口内重复字符时，把左指针直接跳到该字符上次出现位置的后一格。",
+    "why_it_works": "对每个右端点 right，left 维护的是「以 right 结尾的最长合法窗口」的左边界。因为 left 只会向右移动，从不会回退，所以每个元素最多被左右指针各访问一次。窗口内没有重复字符时，以 right 结尾的最长合法子串就是 [left, right]；扫描完所有右端点，取最大值即可。",
+    "steps": [
+      "用 last 记录每个字符上一次出现的下标，left 表示当前窗口左边界，best 记录历史最大长度。",
+      "右指针枚举字符 ch。如果 ch 在 last 中，并且上次位置 last[ch] 仍然落在当前窗口内（last[ch] >= left），就把 left 移到 last[ch] + 1。",
+      "把 ch 的当前位置写入 last，保证下一次遇到它时能拿到最新位置。",
+      "当前窗口长度是 right - left + 1，用 best 更新。",
+      "扫描结束后返回 best。每个字符进入窗口一次、离开窗口一次，所以是线性的。"
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(min(n, Σ))",
+      "time_why": "right 从左到右扫一遍；left 只向右移动，总共也最多移动 n 次。",
+      "space_why": "last 表保存每个字符最近一次出现的位置，大小取决于字符集；最坏是 n 个不同字符。"
+    },
+    "pitfalls": [
+      "判断重复时必须写 last[ch] >= left，不能只写 ch in last：那个旧位置可能在窗口外。",
+      "先更新 left，再更新 last[ch]；否则会把自己当成重复字符。",
+      "空串时循环不执行，best 初始化为 0 才能正确返回 0。"
+    ]
+  },
+  "visual": {
+    "title": "窗口扩张与收缩：以 tmmzuxt 为例",
+    "example": "输入：s = \"tmmzuxt\"；选它是因为既有“重复字符在窗口内 → 必须收缩”（第二个 m），也有“重复字符在窗口外 → 不能收缩”（最后的 t），正好覆盖 last[ch] >= left 这个最容易写错的判断。",
+    "test": {
+      "input": {
+        "s": "tmmzuxt"
+      },
+      "expected": 5
+    },
+    "panels": [
+      {
+        "id": "s",
+        "kind": "array",
+        "label": "s（蓝框 = 当前窗口）",
+        "values": [
+          "t",
+          "m",
+          "m",
+          "z",
+          "u",
+          "x",
+          "t"
+        ]
+      },
+      {
+        "id": "last",
+        "kind": "map",
+        "label": "last：字符 → 最后出现的位置",
+        "items": {}
+      },
+      {
+        "id": "vars",
+        "kind": "map",
+        "label": "变量",
+        "items": {
+          "left": 0,
+          "best": 0
+        }
+      }
+    ],
+    "frames": [
+      {
+        "caption": "初始化：窗口为空，left=0，best=0，last 还没有记录任何字符。",
+        "line": "best = 0",
+        "state": {
+          "s": {
+            "pointers": {
+              "L": 0
+            }
+          }
+        }
+      },
+      {
+        "caption": "right=0 纳入 t：t 没出现过，窗口 [0,0] 合法，best 更新为 1。",
+        "line": "best = max(best, right - left + 1)",
+        "state": {
+          "s": {
+            "pointers": {
+              "L": 0,
+              "R": 0
+            },
+            "window": [
+              0,
+              0
+            ],
+            "active": [
+              0
+            ]
+          },
+          "last": {
+            "items": {
+              "t": 0
+            },
+            "active": [
+              "t"
+            ]
+          },
+          "vars": {
+            "items": {
+              "left": 0,
+              "best": 1
+            },
+            "active": [
+              "best"
+            ]
+          }
+        }
+      },
+      {
+        "caption": "right=1 纳入 m：仍无重复，窗口 [0,1]，best=2。",
+        "line": "best = max(best, right - left + 1)",
+        "state": {
+          "s": {
+            "pointers": {
+              "L": 0,
+              "R": 1
+            },
+            "window": [
+              0,
+              1
+            ],
+            "active": [
+              1
+            ]
+          },
+          "last": {
+            "items": {
+              "t": 0,
+              "m": 1
+            },
+            "active": [
+              "m"
+            ]
+          },
+          "vars": {
+            "items": {
+              "left": 0,
+              "best": 2
+            },
+            "active": [
+              "best"
+            ]
+          }
+        }
+      },
+      {
+        "caption": "right=2 又遇到 m：旧位置 1 ≥ left=0，说明重复在窗口内，left 直接跳到 1+1=2。",
+        "line": "left = last[ch] + 1",
+        "tone": "decision",
+        "badge": "收缩：left → 2",
+        "state": {
+          "s": {
+            "pointers": {
+              "L": 2,
+              "R": 2
+            },
+            "window": [
+              2,
+              2
+            ],
+            "done": [
+              0,
+              1
+            ],
+            "active": [
+              2
+            ],
+            "bad": [
+              1
+            ]
+          },
+          "last": {
+            "items": {
+              "t": 0,
+              "m": 2
+            },
+            "active": [
+              "m"
+            ]
+          },
+          "vars": {
+            "items": {
+              "left": 2,
+              "best": 2
+            },
+            "active": [
+              "left"
+            ]
+          }
+        }
+      },
+      {
+        "caption": "right=3..5 依次纳入 z、u、x，都没重复，窗口扩张到 [2,5]，best=4。",
+        "line": "best = max(best, right - left + 1)",
+        "state": {
+          "s": {
+            "pointers": {
+              "L": 2,
+              "R": 5
+            },
+            "window": [
+              2,
+              5
+            ],
+            "active": [
+              3,
+              4,
+              5
+            ]
+          },
+          "last": {
+            "items": {
+              "t": 0,
+              "m": 2,
+              "z": 3,
+              "u": 4,
+              "x": 5
+            },
+            "active": [
+              "z",
+              "u",
+              "x"
+            ]
+          },
+          "vars": {
+            "items": {
+              "left": 2,
+              "best": 4
+            },
+            "active": [
+              "best"
+            ]
+          }
+        }
+      },
+      {
+        "caption": "right=6 遇到 t：t 出现过，但旧位置 0 < left=2，已经在窗口外，所以不收缩！只写 ch in last 就会错。",
+        "line": "if ch in last and last[ch] >= left:",
+        "tone": "decision",
+        "badge": "不收缩",
+        "state": {
+          "s": {
+            "pointers": {
+              "L": 2,
+              "R": 6
+            },
+            "window": [
+              2,
+              6
+            ],
+            "active": [
+              6
+            ],
+            "bad": [
+              0
+            ]
+          },
+          "last": {
+            "items": {
+              "t": 0,
+              "m": 2,
+              "z": 3,
+              "u": 4,
+              "x": 5
+            },
+            "bad": [
+              "t"
+            ]
+          }
+        }
+      },
+      {
+        "caption": "更新 last[t]=6，窗口 [2,6] 长度 5，best 更新为 5。",
+        "line": "best = max(best, right - left + 1)",
+        "state": {
+          "s": {
+            "pointers": {
+              "L": 2,
+              "R": 6
+            },
+            "window": [
+              2,
+              6
+            ],
+            "active": [
+              6
+            ]
+          },
+          "last": {
+            "items": {
+              "t": 6,
+              "m": 2,
+              "z": 3,
+              "u": 4,
+              "x": 5
+            },
+            "active": [
+              "t"
+            ]
+          },
+          "vars": {
+            "items": {
+              "left": 2,
+              "best": 5
+            },
+            "active": [
+              "best"
+            ]
+          }
+        }
+      },
+      {
+        "caption": "扫描结束，最长无重复子串是 mzuxt，返回 best = 5。",
+        "line": "return best",
+        "tone": "success",
+        "badge": "return 5",
+        "state": {
+          "s": {
+            "pointers": {},
+            "window": [
+              2,
+              6
+            ],
+            "good": [
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          },
+          "vars": {
+            "items": {
+              "left": 2,
+              "best": 5
+            },
+            "active": [
+              "best"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "code": {
+    "language": "Python 3",
+    "source": "class Solution:\n    def lengthOfLongestSubstring(self, s: str) -> int:\n        last = {}\n        left = 0\n        best = 0\n\n        for right, ch in enumerate(s):\n            if ch in last and last[ch] >= left:\n                left = last[ch] + 1\n            last[ch] = right\n            best = max(best, right - left + 1)\n\n        return best",
+    "walkthrough": "right 是循环变量；last[ch] 给出 ch 上一次出现的位置；left 只在「旧位置仍在窗口内」时跳转。best 每次用当前窗口长度更新，因此不需要保存具体子串。"
+  },
+  "checks": [
+    {
+      "q": "为什么判断重复要写 last[ch] >= left，而不能只写 ch in last？",
+      "a": "因为 ch 可能以前出现过，但那个旧位置已经在当前窗口左边。此时窗口内并没有重复，left 不应该跳。"
+    },
+    {
+      "q": "s 为空时程序会返回什么？",
+      "a": "循环一次也不执行，best 初始值是 0，所以返回 0，正确。"
+    },
+    {
+      "q": "如果题目要求返回最长子串本身，代码要怎么改？",
+      "a": "在每次 best 更新时记录 best_left = left、best_right = right，最后返回 s[best_left:best_right + 1]。"
+    }
+  ],
+  "takeaway": "滑动窗口不是「两个指针随便动」，而是：右指针负责产生新状态，左指针负责删除非法状态；只要左指针不回退，整体就能保持线性。",
+  "followups": [
+    {
+      "title": "至多包含 K 个不同字符的最长子串",
+      "idea": "把「窗口内不能有重复」换成「窗口内不同字符数不超过 K」，用计数器维护窗口内种类数。"
+    },
+    {
+      "title": "至多包含两个不同字符的最长子串",
+      "idea": "是上一题的 K=2 特例；窗口收缩到不同字符数重新小于等于 2。"
+    },
+    {
+      "title": "替换后的最长重复字符",
+      "idea": "窗口内「长度 - 出现次数最多的字符数」不能超过 k；这是另一类窗口合法性判断。"
+    }
+  ],
+  "judge": {
+    "compare": "exact"
+  },
+  "tests": [
+    {
+      "input": {
+        "s": ""
+      },
+      "expected": 0,
+      "why": "空串：循环不执行，best 保持 0"
+    },
+    {
+      "input": {
+        "s": "bbbbb"
+      },
+      "expected": 1,
+      "why": "全部相同：每一步都收缩到只剩 1 个"
+    },
+    {
+      "input": {
+        "s": "abba"
+      },
+      "expected": 2,
+      "why": "旧位置在窗口外时不能收缩"
+    }
+  ]
+}
