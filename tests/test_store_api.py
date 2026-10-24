@@ -6,8 +6,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import support
+import algo_store
 from algo_store import ProblemStore
 
 
@@ -121,6 +123,14 @@ class StoreAPITests(unittest.TestCase):
         self.assertIsNone(record["statement"])
         self.assertFalse(record["has_statement"])
         self.assertIn("official_url", record["note"])
+
+    def test_missing_free_statement_is_not_reported_as_premium(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, patch.object(algo_store, "FULL_DIR", Path(tmp)):
+            record = self.store.get("two-sum")
+        self.assertFalse(record["paid_only"])
+        self.assertIsNone(record["statement"])
+        self.assertNotIn("Premium", record["note"])
+        self.assertIn("make build", record["note"])
 
     def test_get_out_of_scope_problem(self) -> None:
         record = self.store.get("combine-two-tables")

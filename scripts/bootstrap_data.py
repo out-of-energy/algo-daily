@@ -14,6 +14,7 @@ so an interrupted run resumes where it stopped.
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
 import subprocess
 import sys
@@ -31,14 +32,29 @@ def dataset_status() -> tuple[bool, str]:
     if not DB.exists() or not MANIFEST.exists():
         return False, "未构建（缺少 data/algorithms.db 或 data/normalized/）"
     try:
+        manifest = json.loads(MANIFEST.read_text())
         with sqlite3.connect(f"file:{DB}?mode=ro", uri=True) as conn:
             total = conn.execute("SELECT COUNT(*) FROM problems").fetchone()[0]
-            free = conn.execute("SELECT COUNT(*) FROM problems WHERE has_statement = 1").fetchone()[0]
-    except sqlite3.Error as exc:
-        return False, f"数据库无法读取：{exc}"
+            slugs = [row[0] for row in conn.execute("SELECT slug FROM problems WHERE has_statement = 1")]
+            generation = conn.execute("SELECT value FROM meta WHERE key='generated_at'").fetchone()
+        if not generation or generation[0] != manifest["generated_at"]:
+            return False, "数据库与 JSON 构建版本不一致，请运行 make build"
+        if total != manifest["counts"]["total"] or len(slugs) != manifest["counts"]["free_with_statement"]:
+            return False, "数据库与 manifest 数量不一致，请运行 make build"
+        normalized = MANIFEST.parent
+        required = [
+            normalized / "index.json", normalized / "index.jsonl", normalized / "topics.json",
+            *(normalized / "problems" / f"{slug}.json" for slug in slugs),
+            *(normalized / "by-topic" / f"{topic}.json" for topic in manifest["topics"]),
+        ]
+        missing = next((path for path in required if not path.is_file()), None)
+        if missing:
+            return False, f"题库文件缺失：{missing}，请运行 make build"
+    except (sqlite3.Error, OSError, ValueError, KeyError, TypeError) as exc:
+        return False, f"题库无法读取：{exc}"
     if not total:
         return False, "数据库为空"
-    return True, f"{total} 道题，其中 {free} 道有完整题面"
+    return True, f"{total} 道题，其中 {len(slugs)} 道有完整题面"
 
 
 def log(message: str = "") -> None:
@@ -53,7 +69,7 @@ def run_step(label: str, args: list[str]) -> None:
     if proc.returncode != 0:
         raise SystemExit(
             f"\n{label} 失败（退出码 {proc.returncode}）。"
-            "修复后重新运行 `make data` 即可，已抓取的部分有缓存，不会从头再来。"
+            "修复后重新运行刚才的命令；make refresh 会忽略旧缓存重新抓取，普通抓取可复用匹配的缓存。"
         )
     log(f"    完成，用时 {time.monotonic() - started:.0f} 秒")
 

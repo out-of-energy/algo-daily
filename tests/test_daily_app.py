@@ -217,10 +217,15 @@ class DailyAppTests(unittest.TestCase):
         self.assertEqual([p["kind"] for p in visual["panels"]], ["array", "map", "map"])
         self.assertGreaterEqual(len(visual["frames"]), 6)
         self.assertTrue(all(f["lines"] for f in visual["frames"]))
+
         self.assertIn("last[ch] >= left", self.analysis["code"]["source"])
         self.assertTrue(self.analysis["checks"])
         self.assertEqual(self.analysis["meta"]["model"], "demo-fixture")
         self.assertTrue(self.analysis["sources"][0]["url"].startswith("https://leetcode.cn/"))
+
+    def test_demo_has_real_execution_verification(self) -> None:
+        self.assertEqual(self.analysis["verification"]["status"], "passed")
+        self.assertIn("代码已在沙箱中实际运行", self.page)
 
     def test_ai_json_rejects_garbage_and_bad_visual_type(self) -> None:
         with self.assertRaises(AnalysisError):
@@ -649,12 +654,13 @@ class DailyAppTests(unittest.TestCase):
             prior = self.selector.history
             self.selector.history = history
             try:
-                for topic_id in support.topic_ids():
-                    if topic_id != "design":
-                        history.upsert({
-                            "date": "2026-05-01", "slug": f"x-{topic_id}",
-                            "topic": topic_id, "coverage_topic": topic_id,
-                        })
+                for offset, topic_id in enumerate(t for t in support.topic_ids() if t != "design"):
+                    history.upsert({
+                        "date": (date(2026, 5, 1) - timedelta(days=offset)).isoformat(),
+                        "slug": f"x-{topic_id}",
+                        "topic": topic_id, "coverage_topic": topic_id,
+                    })
+                self.assertEqual(len(history.all()), len(support.topic_ids()) - 1)
                 with patch.object(self.selector, "_candidates", side_effect=no_hard_in_design):
                     pick = self.selector.pick(date(2026, 5, 2))
             finally:

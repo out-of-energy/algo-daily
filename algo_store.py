@@ -282,7 +282,11 @@ class ProblemStore:
             "code_snippets": {},
             "meta_data": _json_load(row["meta_data_json"], {}),
             "license": row["license"],
-            "note": "Premium statement not stored locally; use official_url.",
+            "note": (
+                "Premium statement not stored locally; use official_url."
+                if row["paid_only"] else
+                "Local statement unavailable; rebuild with `make build` or use official_url."
+            ),
         })
         return record
 

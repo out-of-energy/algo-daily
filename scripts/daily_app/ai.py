@@ -136,10 +136,12 @@ def normalize_analysis(data: dict, problem: dict, topic_label: str, model: str) 
     }
 
 
-def load_demo_analysis(problem: dict, model: str = "demo") -> dict:
+def load_demo_analysis(problem: dict, model: str = "demo", settings_verify: dict | None = None) -> dict:
     path = Path(__file__).with_name("demo_analysis.json")
     data = json.loads(path.read_text())
-    return normalize_analysis(data, problem, problem.get("topic_label", ""), model)
+    analysis = normalize_analysis(data, problem, problem.get("topic_label", ""), model)
+    analysis["verification"] = verify_analysis(data, problem, settings_verify)
+    return analysis
 
 
 class AIClient:

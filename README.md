@@ -16,6 +16,8 @@ make data            # = python3 scripts/bootstrap_data.py
 
 - 不手动执行也可以：`run_daily.py`、`algo_store.py` 启动时发现没有题库会自动构建一次（`config/app.json` 里 `data.auto_bootstrap` 设为 `false` 可关闭）。
 - `make data-check` 查看状态；`make refresh` 重新抓取最新题目并重建。
+- `make refresh` 忽略元数据和题面批次缓存；普通抓取只复用 slug 集合完全匹配的批次。任一批次失败时返回非零，保留旧索引，不继续重建。
+- 重建先在同一文件系统的临时目录生成全部 JSON 和 SQLite，再切换发布；写入失败不会先清空旧题库。JSON 与数据库无法跨文件整体原子切换，进程被强制中断时可能短暂不一致；`make data-check` 会检查构建时间、数量和必要文件，发现不完整后需重建。
 
 ## 先看效果
 
@@ -336,6 +338,11 @@ with ProblemStore() as store:
 - `store.tags()`
 - `store.export_jsonl(rows, path)`
 
+`search=` 保持字面子串匹配（`LIKE`），不把用户输入解释为 FTS 查询语法。
+支持 FTS5 的 SQLite 构建还提供 `problems_fts`，供直接 SQL 查询使用，例如
+`SELECT uid, title FROM problems_fts WHERE problems_fts MATCH 'island';`。
+免费题的本地正文文件缺失时，`store.get()` 会返回元数据并在 `note` 中提示重建，而不是将其误报为付费题。
+
 直接读文件也完全可以：
 
 ```python
@@ -413,4 +420,4 @@ MIT 只覆盖本仓库的源代码与文档；通过 `make data` 在本地获取
 
 ## 测试结果
 
-`python3 -m unittest discover -s tests -v`：共 98 个测试。覆盖索引/JSONL/专题文件/SQLite 对账、付费题零正文、中文题面回填、分类规则可重放、查询 API、30 天与 120 天专题轮转、动画场景 DSL 校验与状态继承、代码沙箱执行校验（官方示例 / 边界用例 / 动画结论）、JSON 修复、HTML 转义、邮件 dry-run 与附件。没有本地题库时，数据相关测试会跳过，8 个纯逻辑测试照常运行。
+`python3 -m unittest discover -s tests -v`：共 113 个测试。覆盖索引/JSONL/专题文件/SQLite 对账、付费题零正文、中文题面回填、分类规则可重放、查询 API、30 天与 120 天专题轮转、动画场景 DSL 校验与状态继承、代码执行校验（官方示例 / 边界用例 / 动画结论）、JSON 修复、HTML 转义、邮件 dry-run 与附件，以及发送失败重试、批次缓存失配、重建失败回滚与就绪检查。没有本地题库时，数据相关测试会跳过，20 个纯逻辑测试照常运行。

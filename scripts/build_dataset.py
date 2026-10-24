@@ -22,8 +22,10 @@ import argparse
 import html
 import json
 import re
+import shutil
 import sqlite3
 import sys
+import tempfile
 from collections import Counter
 from datetime import datetime, timezone
 from html.parser import HTMLParser
@@ -363,26 +365,22 @@ def build_full(meta: dict, raw: dict | None, cls: dict, tags: list[dict]) -> dic
     }
 
 
-def write_outputs(full_records: list[dict], topics_cfg: dict, generated_at: str) -> None:
-    for directory in (OUT, OUT_PROBLEMS, OUT_TOPICS):
+def write_outputs(full_records: list[dict], topics_cfg: dict, generated_at: str, out: Path = OUT) -> None:
+    out_problems = out / "problems"
+    out_topics = out / "by-topic"
+    for directory in (out, out_problems, out_topics):
         directory.mkdir(parents=True, exist_ok=True)
-
-    # Clean stale per-topic and per-problem outputs from a previous build.
-    for path in OUT_TOPICS.glob("*.json"):
-        path.unlink()
-    for path in OUT_PROBLEMS.glob("*.json"):
-        path.unlink()
 
     compact = [compact_record(r) for r in full_records]
     compact.sort(key=lambda r: r["uid"])
-    dump_json(OUT / "index.json", compact)
-    with (OUT / "index.jsonl").open("w") as fh:
+    dump_json(out / "index.json", compact)
+    with (out / "index.jsonl").open("w") as fh:
         for record in compact:
             fh.write(json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n")
 
     for full in full_records:
         if full["has_statement"]:
-            dump_json(OUT_PROBLEMS / f"{full['slug']}.json", full)
+            dump_json(out_problems / f"{full['slug']}.json", full)
 
     # Per-topic extracts, preserving multiple memberships.
     by_uid = {r["uid"]: r for r in compact}
@@ -424,7 +422,7 @@ def write_outputs(full_records: list[dict], topics_cfg: dict, generated_at: str)
             "free_with_statement_count": sum(1 for r in rows if r["has_statement"]),
             "problems": rows,
         }
-        dump_json(OUT_TOPICS / f"{cat['id']}.json", doc)
+        dump_json(out_topics / f"{cat['id']}.json", doc)
         topic_counts[cat["id"]] = {
             "count": len(rows),
             "primary_count": doc["primary_count"],
@@ -452,10 +450,10 @@ def write_outputs(full_records: list[dict], topics_cfg: dict, generated_at: str)
             for c in topics_cfg["categories"]
         ],
     }
-    dump_json(OUT / "topics.json", topics_doc)
+    dump_json(out / "topics.json", topics_doc)
 
     pending = [r for r in compact if r["scope"] == "pending"]
-    dump_json(OUT / "pending-classification.json", {
+    dump_json(out / "pending-classification.json", {
         "schema_version": SCHEMA_VERSION,
         "generated_at": generated_at,
         "count": len(pending),
@@ -469,7 +467,7 @@ def write_outputs(full_records: list[dict], topics_cfg: dict, generated_at: str)
 
     out_of_scope = [r for r in compact if not r["in_scope"] and r["scope"] != "pending"]
     scope_counts = Counter(r["scope"] for r in out_of_scope)
-    dump_json(OUT / "out-of-scope.json", {
+    dump_json(out / "out-of-scope.json", {
         "schema_version": SCHEMA_VERSION,
         "generated_at": generated_at,
         "count": len(out_of_scope),
@@ -525,11 +523,11 @@ def write_outputs(full_records: list[dict], topics_cfg: dict, generated_at: str)
             "redistribution": "Do not publish the statement corpus or SQLite database publicly.",
         },
     }
-    dump_json(OUT / "manifest.json", manifest)
+    dump_json(out / "manifest.json", manifest)
 
 
-def build_sqlite(full_records: list[dict], topics_cfg: dict, generated_at: str) -> None:
-    tmp_path = DB_PATH.with_suffix(".building.db")
+def build_sqlite(full_records: list[dict], topics_cfg: dict, generated_at: str, db_path: Path = DB_PATH) -> None:
+    tmp_path = db_path.with_suffix(".building.db")
     if tmp_path.exists():
         tmp_path.unlink()
     conn = sqlite3.connect(tmp_path)
@@ -722,10 +720,34 @@ def build_sqlite(full_records: list[dict], topics_cfg: dict, generated_at: str) 
 
     if counts["problems"] != len(full_records):
         raise RuntimeError(f"SQLite row mismatch: {counts['problems']} != {len(full_records)}")
-    if DB_PATH.exists():
-        DB_PATH.unlink()
-    tmp_path.replace(DB_PATH)
-    print(f"sqlite: {DB_PATH} ({counts}) fts={fts_status}")
+    tmp_path.replace(db_path)
+    print(f"sqlite: {db_path} ({counts}) fts={fts_status}")
+
+
+def publish_dataset(full_records: list[dict], topics_cfg: dict, generated_at: str, skip_db: bool = False) -> None:
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".dataset-build-", dir=OUT.parent) as tmp:
+        staging = Path(tmp)
+        normalized = staging / "normalized"
+        database = staging / "algorithms.db"
+        previous = staging / "previous"
+        write_outputs(full_records, topics_cfg, generated_at, normalized)
+        if not skip_db:
+            build_sqlite(full_records, topics_cfg, generated_at, database)
+
+        had_previous = OUT.exists()
+        if had_previous:
+            OUT.replace(previous)
+        try:
+            normalized.replace(OUT)
+            if not skip_db:
+                database.replace(DB_PATH)
+        except OSError:
+            if OUT.exists():
+                shutil.rmtree(OUT)
+            if had_previous:
+                previous.replace(OUT)
+            raise
 
 
 def main() -> int:
@@ -755,13 +777,16 @@ def main() -> int:
         full_records.append(full)
 
     if missing:
-        print(f"warning: {len(missing)} free problems have no raw statement; first: {missing[:5]}")
+        print(
+            f"error: {len(missing)} free problems have no raw statement; first: {missing[:5]}. "
+            "Run make refresh to retry fetching; previous dataset retained.",
+            file=sys.stderr,
+        )
+        return 1
 
     # Deterministic id order, matching the source index.
     full_records.sort(key=lambda r: (int(r["source_id"]) if r["source_id"].isdigit() else 10**9, r["slug"]))
-    write_outputs(full_records, topics_cfg, generated_at)
-    if not args.skip_db:
-        build_sqlite(full_records, topics_cfg, generated_at)
+    publish_dataset(full_records, topics_cfg, generated_at, skip_db=args.skip_db)
 
     manifest = load_json(OUT / "manifest.json")
     print(json.dumps(manifest["counts"], ensure_ascii=False, indent=2))

@@ -8,7 +8,8 @@
     "repeat_window_days": 180,
     "prefer_curated": true,
     "coverage_window_days": 30,
-    "difficulty_mix": {"window_days": 7, "Easy": 2, "Medium": 4, "Hard": 1}  },
+    "difficulty_mix": {"window_days": 7, "Easy": 2, "Medium": 4, "Hard": 1}
+  },
   "ai": {
     "base_url": "https://api.deepseek.com/v1",
     "model": "deepseek-v4-flash",

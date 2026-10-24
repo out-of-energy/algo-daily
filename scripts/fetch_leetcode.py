@@ -160,30 +160,36 @@ def batch_query(slugs: list[str]) -> dict:
     return http_json(LIST_URL, {"query": query})
 
 
-def valid_batch_file(path: Path, expected: int) -> bool:
+def valid_batch_data(raw: dict, slugs: list[str]) -> bool:
+    data = raw.get("data") or {}
+    return (
+        not raw.get("errors")
+        and len(data) == len(slugs)
+        and all(isinstance(q, dict) for q in data.values())
+        and {q.get("titleSlug") for q in data.values()} == set(slugs)
+    )
+
+
+def valid_batch_file(path: Path, slugs: list[str]) -> bool:
     try:
         raw = json.loads(path.read_text())
-        data = raw.get("data") or {}
-        return len(data) >= expected
-    except Exception:  # noqa: BLE001
+        return isinstance(raw, dict) and valid_batch_data(raw, slugs)
+    except (OSError, ValueError, TypeError, AttributeError):
         return False
 
 
-def fetch_batch(index: int, slugs: list[str], retries: int = 5) -> dict:
+def fetch_batch(index: int, slugs: list[str], retries: int = 5, refresh: bool = False) -> dict:
     BATCH_CACHE.mkdir(parents=True, exist_ok=True)
     cache_path = BATCH_CACHE / f"batch_{index:04d}.json"
-    if valid_batch_file(cache_path, len(slugs)):
+    if not refresh and valid_batch_file(cache_path, slugs):
         return json.loads(cache_path.read_text())
 
     last_err = None
     for attempt in range(retries):
         try:
             data = batch_query(slugs)
-            if data.get("errors"):
-                # Partial errors are possible; accept a response that still has data.
-                log(f"  batch {index:04d}: GraphQL warnings: {str(data['errors'])[:240]}")
-            if not data.get("data"):
-                raise RuntimeError(f"empty GraphQL response: {str(data)[:300]}")
+            if not valid_batch_data(data, slugs):
+                raise RuntimeError(f"incomplete or mismatched GraphQL response: {str(data)[:300]}")
             cache_path.write_text(json.dumps(data, ensure_ascii=False))
             return data
         except urllib.error.HTTPError as exc:
@@ -291,7 +297,7 @@ def build_problem_record(q: dict, meta: dict, fetched_at: str) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Fetch local LeetCode index + free statements")
-    parser.add_argument("--refresh", action="store_true", help="ignore metadata cache")
+    parser.add_argument("--refresh", action="store_true", help="ignore metadata and statement batch caches")
     parser.add_argument("--workers", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=20)
     parser.add_argument("--limit", type=int, default=0, help="debug: only N free problems")
@@ -369,19 +375,22 @@ def main() -> int:
         def work(pair: tuple[int, list[str]]) -> tuple[int, dict]:
             i, slugs = pair
             try:
-                result = fetch_batch(i, slugs)
+                result = fetch_batch(i, slugs, refresh=args.refresh)
                 return i, result
             except Exception as exc:  # noqa: BLE001
                 log(f"  batch {i:04d} FAILED: {exc}")
                 return i, {}
 
         done = 0
+        failed_batches = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
             for i, result in pool.map(work, list(enumerate(batches))):
                 done += 1
                 if done % 10 == 0 or done == len(batches):
                     log(f"  fetched {done}/{len(batches)} batches")
                 data = result.get("data") or {}
+                if not data:
+                    failed_batches.append(i)
                 for qi, q in data.items():
                     if not q or q.get("isPaidOnly"):
                         continue
@@ -407,6 +416,10 @@ def main() -> int:
                     item["dislikes"] = rec["dislikes"]
                     if rec["stats"]["ac_rate"] is not None:
                         item["ac_rate"] = rec["stats"]["ac_rate"]
+
+        if failed_batches:
+            log(f"fetch failed: {len(failed_batches)} batches incomplete; previous index retained. Rerun to retry.")
+            return 1
 
     for item in index:
         item["tracks"] = compute_tracks(item["id"], item.get("tags", []), topics)

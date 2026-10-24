@@ -15,6 +15,7 @@ import argparse
 import json
 import shutil
 import sys
+import time
 from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -70,18 +71,31 @@ def public_or_empty(settings: Settings, day: date, demo: bool) -> str:
     return "" if demo else settings.public_day_url(day.isoformat())
 
 
+def send_email(
+    settings: Settings, analysis: dict, problem: dict, page: str, day: date,
+    dry_run: bool | None = None, public_url: str = "", demo: bool = False,
+) -> dict:
+    emailer = Emailer(settings)
+    try:
+        return emailer.send(analysis, problem, page, day, dry_run, public_url, demo)
+    except EmailError as exc:
+        print(f"邮件发送失败：{exc}；2 秒后重试一次。", file=sys.stderr)
+        time.sleep(2)
+    return emailer.send(analysis, problem, page, day, dry_run, public_url, demo)
+
+
 def build_demo(args: argparse.Namespace, settings: Settings, day: date, selector: ProblemSelector) -> int:
     problem = selector.load_problem(DEMO_SLUG)
     problem["topic_label"] = settings.topic_label(problem.get("primary_topic"))
-    analysis = load_demo_analysis(problem, model="demo-fixture")
+    analysis = load_demo_analysis(problem, model="demo-fixture", settings_verify=settings.app.get("verify"))
     page = render_page(settings, problem, analysis, day, demo=True)
     page_path = settings.root / "site" / "demo.html"
     write_text(page_path, page)
 
     email_result = {"status": "skipped", "path": "", "subject": "", "to": []}
     if not args.no_email:
-        emailer = Emailer(settings)
-        email_result = emailer.send(
+        email_result = send_email(
+            settings,
             analysis, problem, page, day,
             dry_run=not args.send,
             public_url="",
@@ -129,21 +143,27 @@ def generate_normal(
             problem = selector.load_problem(existing["slug"])
             problem["topic_label"] = settings.topic_label(problem.get("primary_topic"))
             write_text(page_path, render_page(settings, problem, existing["analysis"], day))
-        if args.resend or args.send:
+        retry_failed = existing.get("email", {}).get("status") == "failed"
+        if not args.no_email and (args.resend or args.send or retry_failed):
             problem = selector.load_problem(existing["slug"])
             problem["topic_label"] = settings.topic_label(problem.get("primary_topic"))
             page = page_path.read_text()
-            email_result = Emailer(settings).send(
-                existing["analysis"], problem, page, day,
-                dry_run=(False if args.send else (True if args.dry_run else None)),
-                public_url=public_or_empty(settings, day, False),
-            )
+            try:
+                email_result = send_email(
+                    settings, existing["analysis"], problem, page, day,
+                    dry_run=(False if args.send else (True if args.dry_run else None)),
+                    public_url=public_or_empty(settings, day, False),
+                )
+            except EmailError as exc:
+                print(f"邮件发送失败：{exc}", file=sys.stderr)
+                email_result = {"status": "failed", "error": str(exc), "path": "", "subject": "", "to": []}
             existing["email"] = email_result
             write_json(analysis_path, existing)
             _record_history(
                 settings, history, day, problem, analysis_path, page_path,
                 email_result, existing.get("selection"),
             )
+            rebuild_archive(settings)
             if args.json:
                 print(json.dumps({
                     "mode": "resend",
@@ -153,8 +173,8 @@ def generate_normal(
                     "email": email_result,
                 }, ensure_ascii=False, indent=2))
             else:
-                print(f"已重发已有分析：{email_result}")
-            return 0
+                print(f"已有分析邮件结果：{email_result}")
+            return 1 if email_result["status"] == "failed" else 0
         print(f"{date_str} 已有分析：{analysis_path}")
         print("如需重新生成，加 --force；如需重发邮件，加 --resend。")
         return 0
@@ -185,7 +205,7 @@ def generate_normal(
     problem["topic_label"] = settings.topic_label(problem.get("primary_topic"))
 
     if args.demo:
-        analysis = load_demo_analysis(problem, model="demo-fixture")
+        analysis = load_demo_analysis(problem, model="demo-fixture", settings_verify=settings.app.get("verify"))
     else:
         if not settings.ai_configured:
             print(
@@ -242,8 +262,8 @@ def generate_normal(
 
     if not args.no_email:
         try:
-            email_result = Emailer(settings).send(
-                analysis, problem, page, day,
+            email_result = send_email(
+                settings, analysis, problem, page, day,
                 dry_run=(False if args.send else (True if args.dry_run else None)),
                 public_url=public_or_empty(settings, day, args.demo),
                 demo=args.demo,
@@ -370,7 +390,7 @@ def main() -> int:
             return build_demo(args, settings, day, selector)
         history = History(settings.root / "data" / "daily" / "history.json")
         return generate_normal(args, settings, day, selector, history)
-    except (SelectionError, EmailError) as exc:
+    except (SelectionError, EmailError, AnalysisError) as exc:
         print(f"失败：{exc}", file=sys.stderr)
         return 1
     finally:
